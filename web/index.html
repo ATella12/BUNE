@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bune (Local)</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+      header { display:flex; justify-content: space-between; align-items: center; }
+      .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 16px; }
+      fieldset { border:1px solid #ddd; border-radius: 8px; padding: 12px; }
+      input, button { padding: 8px; }
+      code { background:#f5f5f5; padding:2px 4px; border-radius:4px; }
+      .muted { color:#666; }
+      .row { display:flex; gap:8px; align-items:center; }
+      .row input { flex: 1; }
+      .ok { color: green; }
+      .err { color: #b00020; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.12.1/dist/ethers.min.js"></script>
+    <script defer src="config.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Bune (Localhost)</h1>
+      <button id="connectBtn">Connect Wallet</button>
+    </header>
+    <p class="muted">Range 1–100 • Entry: reads from contract • Chain: localhost (Anvil)</p>
+
+    <section class="grid">
+      <fieldset>
+        <legend>Addresses</legend>
+        <div class="row"><label>USDC</label><input id="usdcAddr" class="mono" /></div>
+        <div class="row"><label>Bune</label><input id="buneAddr" class="mono" /></div>
+        <div class="row"><button id="saveCfg">Save</button><button id="loadCfg">Load</button></div>
+        <small class="muted">Edit web/config.js after deployment or paste here, then Save.</small>
+      </fieldset>
+
+      <fieldset>
+        <legend>Status</legend>
+        <div>Account: <span id="account" class="mono"></span></div>
+        <div>Entry Amount: <span id="entryAmt"></span></div>
+        <div>Current Round: <span id="roundNow"></span></div>
+        <div>Pot: <span id="potNow"></span></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Play</legend>
+        <div class="row"><input id="pick" type="number" min="1" max="100" placeholder="Pick 1-100" /></div>
+        <div class="row"><button id="approveBtn">Approve</button><button id="enterBtn">Enter</button></div>
+        <div id="playMsg"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Draw & Finalize</legend>
+        <div class="row"><input id="roundInput" type="number" placeholder="Round (UTC day)" /></div>
+        <div class="row"><button id="drawBtn">Request Draw</button><button id="finalizeBtn">Finalize</button></div>
+        <div>Winning #: <span id="winning"></span></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Claim</legend>
+        <div class="row"><input id="claimRound" type="number" placeholder="Round" /></div>
+        <div class="row"><button id="claimBtn">Claim</button></div>
+        <div id="claimMsg"></div>
+      </fieldset>
+    </section>
+
+    <section>
+      <h3>Logs</h3>
+      <pre id="logs" class="mono" style="background:#111;color:#ddd;padding:12px;border-radius:8px;max-height:280px;overflow:auto"></pre>
+    </section>
+  </body>
+  </html>
+

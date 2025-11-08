@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BuneLite (Local)</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 840px; margin: 2rem auto; padding: 0 1rem; }
+      header { display:flex; justify-content: space-between; align-items: center; }
+      fieldset { border:1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+      .row { display:flex; gap:8px; align-items:center; }
+      input, button { padding: 8px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      pre { background:#111; color:#ddd; padding:12px; border-radius:8px; max-height:260px; overflow:auto }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.12.1/dist/ethers.min.js"></script>
+    <script defer src="config-lite.js"></script>
+    <script defer src="lite.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>BuneLite</h1>
+      <button id="connectBtn">Connect</button>
+    </header>
+
+    <fieldset>
+      <legend>Status</legend>
+      <div>Account: <span id="account" class="mono"></span></div>
+      <div>Current Round: <span id="roundNow"></span></div>
+      <div>Winning #: <span id="winning"></span></div>
+      <div>Winners Count: <span id="winnersCount"></span></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Play</legend>
+      <div class="row"><input id="pick" type="number" min="1" max="100" placeholder="Pick 1-100" /><button id="enterBtn">Enter</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Draw & Finalize</legend>
+      <div class="row"><input id="roundInput" type="number" placeholder="Round (UTC day)" /></div>
+      <div class="row"><button id="drawBtn">Request Draw</button><button id="finalizeBtn">Finalize</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Winners</legend>
+      <div class="row"><input id="winnersRound" type="number" placeholder="Round" /><button id="listWinnersBtn">List Winners</button></div>
+      <ul id="winnersList"></ul>
+    </fieldset>
+
+    <pre id="logs" class="mono"></pre>
+  </body>
+  </html>
+

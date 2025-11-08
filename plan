@@ -1,0 +1,101 @@
+Title: GuessRounds on Base — Build Plan
+
+Scope
+- Hardhat project with `GuessRounds.sol` using Chainlink VRF (Base Sepolia for test, Base mainnet for prod).
+- Parametric config + deploy scripts (VRF coordinator, keyHash, subId, gas limits).
+- Unit tests: winner selection, tie rules (earliest wins), single participant refund, fee split 90/10, pause/resume, admin updates.
+- Minimal React front‑end (Vite + wagmi + viem): wallet connect, countdown, live activity feed (events/poll), multiple submissions, round history.
+- Farcaster miniapp wrapper page using the same components + manifest/intents per docs.
+- README: step‑by‑step for Base Sepolia → Base mainnet, env vars, VRF subscription setup, miniapp local run.
+
+Repo Layout (proposed)
+- `hardhat/` — Hardhat workspace
+  - `contracts/GuessRounds.sol`
+  - `deploy/` — deployment scripts (ts)
+  - `scripts/` — helpers (tasks)
+  - `test/` — unit tests (ts)
+  - `hardhat.config.ts`
+  - `.env.example`
+- `frontend/` — Vite React app
+  - `src/` UI components, hooks
+  - `public/` static assets, Farcaster miniapp manifest
+  - `.env.example`
+- `README.md` — end‑to‑end instructions
+
+Contract Design (GuessRounds)
+- Parameters
+  - `entryFeeWei` (default 0.00001 ETH), `roundDuration` (default 2h), `paused` toggle
+  - VRF config: `coordinator`, `keyHash`, `subId`, `callbackGasLimit`, `requestConfirmations`
+- State
+  - `currentRoundId`
+  - `Round { startTime, endTime, active, settled, target, pot, guessesCount, winner, requestId }`
+  - `Guess { player, number, timestamp }[]` per round
+  - winners history
+- Flow
+  1) End previous round (owner): compute winner, payout 90/10; if single participant → refund 100%.
+  2) Request randomness for next round (VRF v2) during `endAndSettle()`.
+  3) In `fulfillRandomWords`, store target and automatically start the next round (active=true, set times).
+  4) Users submit guesses while active; charge fee `msg.value == entryFeeWei`.
+  5) Views: current round details, isActive, all predictions for a round, total pot, prior winners.
+  6) Admin: update entry fee, update round duration, end+settle, pause/resume predictions.
+- Events
+  - `RoundStarted`, `GuessSubmitted`, `RoundEnded`, `Payout`
+- Notes
+  - VRF uses Base’s coordinator (Sepolia for testing). All values are parametric via env/deploy args.
+
+Deploy/Config
+- Env vars in `hardhat/.env` (example provided):
+  - `RPC_BASE_SEPOLIA`, `RPC_BASE_MAINNET`, `PRIVATE_KEY`
+  - `VRF_COORDINATOR`, `VRF_KEY_HASH`, `VRF_SUBSCRIPTION_ID`, `VRF_CALLBACK_GAS_LIMIT`, `VRF_REQUEST_CONFIRMATIONS`
+- Scripts
+  - `deploy/00_deploy.ts` reads env, deploys `GuessRounds`, and (optionally) triggers an initial VRF request to bootstrap the first round.
+  - Separate verify task if desired (Basescan). Optional in first cut.
+
+Testing (Hardhat + Mocha/Chai)
+- Use `@chainlink/contracts` VRFCoordinatorV2Mock for unit tests.
+- Tests cover:
+  - Winner selection (closest wins)
+  - Tie rule (earliest timestamp wins, including exact match ties)
+  - Single participant refund (0 owner cut)
+  - Fee split 90/10 (sum equals pot)
+  - Pause/resume blocks new guesses only
+  - Admin updates (entry fee, duration)
+
+Frontend (Vite + wagmi + viem)
+- Pages
+  - Home: current round details, countdown to `endTime`, connect wallet, submit guesses (multiple), live activity feed (events via `watchContractEvent` or polling), pot and entries.
+  - History: list prior rounds (winner address, winning guess, random number, total prize), with pagination/poll.
+- Chain config: Base Sepolia + Base mainnet. Env: `VITE_RPC_URL`, `VITE_CONTRACT_ADDRESS`.
+
+Farcaster miniapp wrapper
+- Expose a miniapp route reusing components with simplified layout.
+- Add manifest following `miniapps.farcaster.xyz` (icons, intents). Provide minimal buttons: “Submit Guess”, “Refresh”.
+- Ensure CORS/static hosting compatibility.
+
+README
+- VRF subscription creation/funding (Sepolia + mainnet) and coordinator/keyHash references.
+- Environment setup and commands for: tests, local chain with VRF mock, deploy to Base Sepolia, switch to Base mainnet.
+- Running the frontend locally and loading the miniapp wrapper.
+
+Open Questions (please confirm)
+1) Folder names: `hardhat/` and `frontend/` okay?
+2) Preferred Solidity version (default 0.8.24)?
+3) Start first round: okay to auto‑start on first VRF fulfillment triggered by a bootstrap request?
+4) Any custom branding for the miniapp (name/icon)?
+
+Phased Execution (approval‑gated)
+1) Scaffold Hardhat project structure and config
+2) Implement `GuessRounds.sol` with VRF hooks
+3) Add parametric deploy scripts and .env.example
+4) Write unit tests with VRF mock
+5) Scaffold Vite app with wagmi/viem
+6) Implement countdown, feed, submit form, history
+7) Add Farcaster wrapper + manifest
+8) Write comprehensive README
+
+Deliverables
+- `hardhat/` workspace with contract, scripts, tests
+- `frontend/` app with working wallet connect and UI features
+- Farcaster miniapp wrapper and manifest
+- README with end‑to‑end steps
+
