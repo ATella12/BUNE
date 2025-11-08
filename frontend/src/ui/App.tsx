@@ -17,6 +17,7 @@ export default function App() {
   const [entryFee, setEntryFee] = useState<bigint>(0n)
   const [guesses, setGuesses] = useState<any[]>([])
   const [guess, setGuess] = useState<number>(0)
+  const [winners, setWinners] = useState<any[]>([])
   const [now, setNow] = useState<number>(Math.floor(Date.now()/1000))
   const rpcUrl = import.meta.env.VITE_RPC_URL as string
   const contract = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`
@@ -40,7 +41,25 @@ export default function App() {
     }
   }
 
-  useEffect(() => { refresh(); const i = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000); return () => clearInterval(i) }, [])
+  useEffect(() => { 
+    refresh(); 
+    const i = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000); 
+    const p = setInterval(() => refresh(), 5000);
+    return () => { clearInterval(i); clearInterval(p) }
+  }, [])
+
+  useEffect(() => { (async () => {
+    try {
+      const count = await client.readContract({ address: contract, abi, functionName: 'priorWinnersCount' }) as bigint
+      const items: any[] = []
+      const start = count > 10n ? count - 10n : 0n
+      for (let i = count; i > start; i--) {
+        const rec = await client.readContract({ address: contract, abi, functionName: 'getWinnerAt', args: [i - 1n] })
+        items.push(rec)
+      }
+      setWinners(items)
+    } catch {}
+  })() }, [client, contract, now])
 
   async function submit() {
     if (!guess || guess < 1 || guess > 1000) { setError('Enter 1..1000'); return }
@@ -103,10 +122,17 @@ export default function App() {
       </section>
 
       <section style={{ marginTop: 16 }}>
-        <h3>History</h3>
-        <p>Open-source scaffold; implement pagination + full history as needed.</p>
+        <h3>History (latest)</h3>
+        {winners.length === 0 ? <p>No winners yet.</p> : (
+          <ul>
+            {winners.map((w, idx) => (
+              <li key={idx}>
+                Round #{String(w.roundId)} — Winner {truncate(w.winner)} — Target {String(w.target)} — Prize {formatEther(w.prize)} ETH
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   )
 }
-

@@ -27,6 +27,8 @@ export const abi = [
   },
   { "type":"function", "name":"entryFeeWei", "inputs": [], "outputs":[{"type":"uint256"}], "stateMutability":"view" },
   { "type":"function", "name":"getGuesses", "inputs": [{"name":"roundId","type":"uint256"}], "outputs":[{"type":"tuple[]","components":[{"name":"player","type":"address"},{"name":"number","type":"uint32"},{"name":"timestamp","type":"uint64"}]}], "stateMutability":"view" },
+  { "type":"function", "name":"priorWinnersCount", "inputs": [], "outputs":[{"type":"uint256"}], "stateMutability":"view" },
+  { "type":"function", "name":"getWinnerAt", "inputs": [{"name":"index","type":"uint256"}], "outputs":[{"type":"tuple","components":[{"name":"roundId","type":"uint256"},{"name":"winner","type":"address"},{"name":"target","type":"uint32"},{"name":"prize","type":"uint256"}]}], "stateMutability":"view" },
   { "type":"function", "name":"submitGuess", "inputs": [{"name":"number","type":"uint32"}], "outputs": [], "stateMutability":"payable" },
   { "type":"event", "name":"GuessSubmitted", "inputs": [
     {"name":"roundId","type":"uint256","indexed":true},
@@ -36,4 +38,3 @@ export const abi = [
     {"name":"newPot","type":"uint256","indexed":false}
   ] }
 ];
-

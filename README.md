@@ -109,17 +109,16 @@ npm run dev
 Features:
 - Wallet connect (wagmi connectors)
 - Countdown timer to round end
-- Live activity feed (polls `getGuesses`) and refresh button
+- Live activity feed (polls `getGuesses`) and periodic refresh
 - Submit guess form (multiple submissions supported)
-- Round history placeholder (extend as needed)
+- Round history (latest winners; extend for pagination)
 
 ## Farcaster Miniapp Wrapper
 
-- Manifest: `frontend/public/miniapp.json` (placeholder). See https://miniapps.farcaster.xyz/docs/getting-started
-- Minimal wrapper route: `/miniapp` renders the same components with a simplified layout; hook up intents/buttons per platform requirements.
+- Manifest: `frontend/public/miniapp.json`. See https://miniapps.farcaster.xyz/docs/getting-started
+- Minimal wrapper route: `/miniapp` renders the same components with a simplified layout; manifest includes example `intents` (Submit, Refresh). Wire these to your frame actions per hosting platform.
 
 ## Production Notes
 - Replace any placeholder Chainlink VRF parameters with the exact values for Base networks.
 - Enforce rate limits and add robust error handling in the UI.
 - Consider subgraph/indexer for scalable history and activity feeds.
-
