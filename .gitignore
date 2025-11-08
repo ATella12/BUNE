@@ -1,0 +1,27 @@
+# Node & package managers
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env files
+.env
+.env.*
+hardhat/.env
+frontend/.env.local
+
+# Hardhat artifacts
+hardhat/cache/
+hardhat/artifacts/
+hardhat/typechain-types/
+
+# Build outputs
+dist/
+build/
+.next/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
