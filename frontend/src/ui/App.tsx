@@ -226,10 +226,15 @@ export default function App() {
               <button className="gr-btn" onClick={endRound}>End + Settle (owner)</button>
             </div>
           )}
-          {!onMiniapp && (
+          {!onMiniapp && round.active && endsIn > 0 && (
             <div className="gr-form" style={{ marginTop: 12 }}>
               <input className="gr-input" type="number" min={1} max={1000} value={guess||''} onChange={e=>setGuess(Number(e.target.value))} placeholder="Your guess (1..1000)" />
               <button className="gr-btn" onClick={submit} disabled={!round?.active || endsIn===0} style={{ marginLeft: 8, padding: '8px 12px', opacity: (!round?.active || endsIn===0) ? 0.6 : 1 }}>Submit Guess</button>
+            </div>
+          )}
+          {(endsIn === 0 || !round.active) && (!owner || address?.toLowerCase() !== owner.toLowerCase()) && (
+            <div className="gr-alert" style={{ marginTop: 12 }}>
+              Round ended. Waiting for owner to settle…
             </div>
           )}
         </section>
