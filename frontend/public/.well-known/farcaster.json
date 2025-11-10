@@ -20,7 +20,7 @@
     "heroImageUrl": "https://raw.githubusercontent.com/github/explore/main/topics/ethereum/ethereum.png",
     "screenshotUrls": ["https://placehold.co/800x600.png"],
     "webhookUrl": "https://bune-again.vercel.app/api/webhook",
-    "noindex": false,
+    "noindex": true,
     "tags": ["game", "base", "guess"],
     "imageUrl": "https://placehold.co/1200x630.png",
     "ogTitle": "BUNE - Guessing Game on Base",
