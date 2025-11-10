@@ -36,3 +36,18 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </WagmiProvider>
   </React.StrictMode>
 )
+
+// Signal readiness to Base Miniapp preview if embedded
+try {
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    const msgVariants = [
+      { type: 'miniapp.ready' },
+      { type: 'miniapp_ready' },
+      { type: 'base.miniapp.ready' },
+      { type: 'ready' }
+    ]
+    msgVariants.forEach((m) => {
+      try { window.parent.postMessage(m, '*') } catch {}
+    })
+  }
+} catch {}

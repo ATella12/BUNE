@@ -11,32 +11,32 @@
     "version": "1",
     "name": "BUNE",
     "homeUrl": "https://bune-again.vercel.app/miniapp",
-    "iconUrl": "https://bune-again.vercel.app/icon.png",
-    "splashImageUrl": "https://bune-again.vercel.app/icon.png",
+    "iconUrl": "https://placehold.co/512x512/png?text=BUNE",
+    "splashImageUrl": "https://placehold.co/1200x800/png?text=BUNE",
     "splashBackgroundColor": "#0d111c",
     "description": "Guess the number, closest wins the pot on Base.",
     "primaryCategory": "games",
     "subtitle": "Closest guess wins the pool",
     "tagline": "Guess. Win. On Base.",
-    "heroImageUrl": "https://bune-again.vercel.app/icon.png",
+    "heroImageUrl": "https://placehold.co/1200x630/png?text=BUNE",
     "screenshotUrls": [
-      "https://bune-again.vercel.app/icon.png"
+      "https://placehold.co/800x600/png?text=BUNE+Screenshot"
     ],
     "webhookUrl": "https://bune-again.vercel.app/api/webhook",
     "noindex": false,
     "tags": ["game", "base", "guess"],
     "ogTitle": "BUNE – Guessing Game on Base",
     "ogDescription": "Guess the number and win the pot on Base.",
-    "ogImageUrl": "https://bune-again.vercel.app/icon.png"
+    "ogImageUrl": "https://placehold.co/1200x630/png?text=BUNE+OG"
   },
   "frame": {
     "version": "1",
     "name": "Example Frame",
-    "iconUrl": "https://bune-again.vercel.app/icon.png",
+    "iconUrl": "https://placehold.co/256x256/png?text=BUNE",
     "homeUrl": "https://bune-again.vercel.app",
-    "imageUrl": "https://bune-again.vercel.app/image.png",
+    "imageUrl": "https://placehold.co/1200x630/png?text=BUNE+Frame",
     "buttonTitle": "Check this out",
-    "splashImageUrl": "https://bune-again.vercel.app/splash.png",
+    "splashImageUrl": "https://placehold.co/1200x800/png?text=BUNE",
     "splashBackgroundColor": "#eeccff",
     "webhookUrl": "https://bune-again.vercel.app/api/webhook"
   }
