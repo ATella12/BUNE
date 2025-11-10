@@ -1,5 +1,5 @@
 {
-  "imageUrl": "https://placehold.co/1200x630/png?text=BUNE",
+  "imageUrl": "https://placehold.co/1200x630.png",
   "accountAssociation": {
     "header": "eyJmaWQiOjIxMTYwOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGM2NUE2Q2RiODg3RDlEOUZCYzQzMGViMDA4NEI2RDI3QUFGNEM2NEYifQ",
     "payload": "eyJkb21haW4iOiJidW5lLWFnYWluLnZlcmNlbC5hcHAifQ",
@@ -11,30 +11,30 @@
     "name": "BUNE",
     "homeUrl": "https://bune-again.vercel.app/miniapp",
     "iconUrl": "https://bune-again.vercel.app/icon-512.png",
-    "splashImageUrl": "https://placehold.co/1200x800/png?text=BUNE",
+    "splashImageUrl": "https://placehold.co/1200x800.png",
     "splashBackgroundColor": "#0d111c",
     "description": "Guess the number, closest wins the pot on Base.",
     "primaryCategory": "games",
     "subtitle": "Closest guess wins the pool",
     "tagline": "Guess. Win. On Base.",
     "heroImageUrl": "https://raw.githubusercontent.com/github/explore/main/topics/ethereum/ethereum.png",
-    "screenshotUrls": ["https://placehold.co/800x600/png?text=BUNE+Screenshot"],
+    "screenshotUrls": ["https://placehold.co/800x600.png"],
     "webhookUrl": "https://bune-again.vercel.app/api/webhook",
     "noindex": false,
     "tags": ["game", "base", "guess"],
-    "imageUrl": "https://placehold.co/1200x630/png?text=BUNE",
-    "ogTitle": "BUNE – Guessing Game on Base",
+    "imageUrl": "https://placehold.co/1200x630.png",
+    "ogTitle": "BUNE - Guessing Game on Base",
     "ogDescription": "Guess the number and win the pot on Base.",
-    "ogImageUrl": "https://placehold.co/1200x630/png?text=BUNE"
+    "ogImageUrl": "https://placehold.co/1200x630.png"
   },
   "frame": {
     "version": "1",
     "name": "Example Frame",
     "iconUrl": "https://bune-again.vercel.app/icon-512.png",
     "homeUrl": "https://bune-again.vercel.app",
-    "imageUrl": "https://placehold.co/1200x630/png?text=BUNE",
+    "imageUrl": "https://placehold.co/1200x630.png",
     "buttonTitle": "Check this out",
-    "splashImageUrl": "https://placehold.co/1200x800/png?text=BUNE",
+    "splashImageUrl": "https://placehold.co/1200x800.png",
     "splashBackgroundColor": "#eeccff",
     "webhookUrl": "https://bune-again.vercel.app/api/webhook"
   }
