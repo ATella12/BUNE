@@ -1,0 +1,41 @@
+:root {
+  --bg: #0d111c;
+  --panel: #111827;
+  --border: #1f2937;
+  --text: #e6edf3;
+  --muted: #9aa4b2;
+  --accent: #0052FF; /* Base blue */
+  --accent-600: #0044d6;
+}
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+
+.gr-app { max-width: 840px; margin: 0 auto; padding: 20px; }
+.gr-header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px; }
+.gr-title { margin: 0; font-size: 20px; letter-spacing: 0.2px; }
+
+.gr-btn { background: var(--accent); color: white; border: 1px solid var(--accent); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
+.gr-btn:hover { background: var(--accent-600); border-color: var(--accent-600); }
+.gr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.gr-btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.gr-btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+.gr-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-top: 16px; }
+.gr-stats { display:flex; gap:16px; flex-wrap:wrap; }
+.gr-stat-label { color: var(--muted); font-size: 12px; }
+.gr-stat-value { font-weight: 700; }
+.gr-countdown { margin-top: 10px; color: var(--muted); }
+
+.gr-form { display:flex; gap: 8px; margin-top: 12px; }
+.gr-input { flex: 1; min-width: 180px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #0b1220; color: var(--text); }
+.gr-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,82,255,0.25); }
+
+.gr-section { margin-top: 16px; }
+.gr-section-head { display:flex; align-items:center; justify-content:space-between; }
+.gr-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+.gr-list-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #0b1220; }
+.gr-tag { background: #0a1a34; color: #8bb3ff; padding: 2px 6px; border-radius: 6px; margin-right: 6px; }
+
+.gr-alert { background:#1f0e0e; border:1px solid #5a2a2a; padding:10px 12px; border-radius:12px; margin:12px 0; }
+
