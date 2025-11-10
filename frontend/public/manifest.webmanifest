@@ -1,7 +1,7 @@
 {
   "name": "BUNE",
   "short_name": "BUNE",
-  "description": "Guess the number, closest wins the pot on Base.",
+  "description": "BUNE: Guess the number — closest wins the pot on Base.",
   "icons": [
     { "src": "/icon.png", "sizes": "512x512", "type": "image/png" }
   ],
