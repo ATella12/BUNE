@@ -1,4 +1,7 @@
 {
+  "baseBuilder": {
+    "ownerAddress": "0xd07AB0f856590512AeFAd6d593f0B58794b51753"
+  },
   "miniapp": {
     "version": "1",
     "name": "BUNE",
