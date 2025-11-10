@@ -135,3 +135,14 @@ The repo includes a GitHub Action that triggers a Vercel Deploy Hook on every pu
 4. Push to `main` — Vercel will auto-deploy. You can also run the workflow manually from the Actions tab.
 
 This works alongside Vercel’s native Git auto-deploy. The hook guarantees a build even when only env/manifest changes occur.
+
+## Deploys on Every Push (No API hooks)
+
+Vercel is configured to auto-deploy Production on every push to `main`.
+
+- Ensure the project is connected to GitHub and `Production Branch` is set to `main` (Vercel ? Project ? Settings ? Git).
+- Set `Root Directory` to `frontend`, `Build Command` = `npm run build`, `Output Directory` = `dist`, `Node` = `20`.
+- Optional: Force a build for every push by disabling the "Ignored Build Step":
+  Settings ? Git ? Ignored Build Step ? Behavior = "Override" and use a command that exits with code 1.
+- For env changes that don’t trigger builds, push an empty commit:
+  `git commit --allow-empty -m "redeploy" && git push origin main`.
