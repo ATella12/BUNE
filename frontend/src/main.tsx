@@ -8,6 +8,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './ui/App'
 import './style.css'
 
+// Prefer Mini App injected EIP-1193 provider if present (Farcaster Wallet)
+try {
+  const g: any = (globalThis as any)
+  if (g && g.sdk && g.sdk.ethereum && !g.ethereum) {
+    g.ethereum = g.sdk.ethereum
+  } else if (g && g.actions && g.actions.ethereum && !g.ethereum) {
+    g.ethereum = g.actions.ethereum
+  }
+} catch {}
+
 const chainId = Number(import.meta.env.VITE_CHAIN_ID || 84532)
 const chains = [baseSepolia, base] as const satisfies readonly [Chain, ...Chain[]]
 const rpcUrl = import.meta.env.VITE_RPC_URL
@@ -22,7 +32,10 @@ const config = createConfig({
     [baseSepolia.id]: http(rpcUrl)
   },
   ssr: false,
-  syncConnectedChain: true
+  syncConnectedChain: true,
+  // Attempt to auto-connect when running inside a miniapp host
+  // (wagmi v2 sets this via storage, but we want a gentle default here)
+  multiInjectedProviderDiscovery: true
 })
 
 const qc = new QueryClient()
@@ -39,7 +52,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 // Signal readiness to Farcaster/Base Mini App hosts so splash hides
 try {
-  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+  if (typeof window !== 'undefined') {
     const msgVariants = [
       { type: 'miniapp.ready' },
       { type: 'miniapp_ready' },
@@ -52,7 +65,11 @@ try {
     const signal = () => {
       if ((window as any).__miniappReadySignalled) return
       ;(window as any).__miniappReadySignalled = true
-      msgVariants.forEach((m) => { try { window.parent.postMessage(m, '*') } catch {} })
+      // Post to parent if in iframe, else broadcast to self (some hosts listen on same window)
+      try {
+        const target: any = (window.parent && window.parent !== window) ? window.parent : window
+        msgVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
+      } catch {}
       try {
         const g: any = (window as any)
         if (g.sdk && g.sdk.actions && typeof g.sdk.actions.ready === 'function') g.sdk.actions.ready()
@@ -83,7 +100,10 @@ try {
           g.actions.ready(); signal(); clearInterval(iv)
         } else {
           // re-signal via postMessage until SDK listens
-          msgVariants.forEach((m) => { try { window.parent.postMessage(m, '*') } catch {} })
+          try {
+            const target: any = (window.parent && window.parent !== window) ? window.parent : window
+            msgVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
+          } catch {}
         }
       } catch {}
       if (tries > 20) clearInterval(iv)
