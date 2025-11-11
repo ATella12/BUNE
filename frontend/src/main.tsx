@@ -1,14 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { WagmiProvider, http, createConfig } from 'wagmi'
-// Prefer first-party SDK import for iOS surfaces
-let fcSdk: any = null as any
-try {
-  // Dynamically require to avoid breaking non-miniapp builds
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  fcSdk = require('@farcaster/miniapp-sdk')?.sdk ?? null
-} catch {}
-import { base, baseSepolia } from 'viem/chains'
+// Attempt to dynamically import the official SDK in browser contexts (iOS compatible)\nlet fcSdk: any = null as any\ntry {\n  if (typeof window !== 'undefined') {\n    import('@farcaster/miniapp-sdk')\n      .then((m: any) => { fcSdk = m?.sdk || null; try { fcSdk?.actions?.ready?.() } catch {} })\n      .catch(() => {})\n  }\n} catch {}\nimport { base, baseSepolia } from 'viem/chains'
 import type { Chain } from 'viem/chains'
 import { injected } from 'wagmi/connectors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -169,3 +162,4 @@ try {
     try { window.addEventListener('load', () => { callAllReadyVariants(); signal() }) } catch {}
   }
 } catch {}
+
