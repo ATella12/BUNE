@@ -77,10 +77,36 @@ try {
       } catch {}
     }
 
-    // Initial attempt right after mount
-    signal()
+  // Initial attempt right after mount
+  signal()
 
-    // Reply to potential handshake/ping messages from host
+  // If SDK not present, inject it per docs and call ready on load
+  try {
+    const g: any = (window as any)
+    const hasSdk = !!(g.sdk && g.sdk.actions && typeof g.sdk.actions.ready === 'function') ||
+                   !!(g.actions && typeof g.actions.ready === 'function')
+    if (!hasSdk) {
+      const existing = document.querySelector('script[data-miniapps-sdk]') as HTMLScriptElement | null
+      if (!existing) {
+        const s = document.createElement('script')
+        s.src = 'https://miniapps.farcaster.xyz/sdk.js'
+        s.async = true
+        s.crossOrigin = 'anonymous'
+        s.setAttribute('data-miniapps-sdk', '1')
+        s.onload = () => {
+          try {
+            const gg: any = (window as any)
+            if (gg.sdk?.actions?.ready) gg.sdk.actions.ready()
+            if (gg.actions?.ready) gg.actions.ready()
+            signal()
+          } catch {}
+        }
+        document.head.appendChild(s)
+      }
+    }
+  } catch {}
+
+  // Reply to potential handshake/ping messages from host
     try {
       window.addEventListener('message', (ev: MessageEvent) => {
         const t = (ev?.data && (ev.data.type || ev.data.event || ev.data.action) || '').toString().toLowerCase()
