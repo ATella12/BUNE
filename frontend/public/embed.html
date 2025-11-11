@@ -20,18 +20,30 @@
         title="BUNE Mini App"></iframe>
     </div>
     <div class="hint">
-      Embed loads Farcaster preview. Open directly: <a id="direct" target="_blank" rel="noopener">miniapp link</a>
+      Provider: <strong id="prov"></strong> • Direct: <a id="direct" target="_blank" rel="noopener">miniapp</a> •
+      <a id="switch" href="#">switch</a>
     </div>
     <script>
       (function () {
         const params = new URLSearchParams(location.search)
         const target = params.get('url') || 'https://bune-again.vercel.app/miniapp'
+        const provider = (params.get('provider') || 'base').toLowerCase()
         const encoded = encodeURIComponent(target)
-        const preview = `https://farcaster.xyz/~/developers/mini-apps/preview?url=${encoded}`
-        document.getElementById('miniapp-frame').src = preview
+        const src = provider === 'base'
+          ? `https://base.dev/preview?url=${encoded}`
+          : `https://farcaster.xyz/~/developers/mini-apps/preview?url=${encoded}`
+        document.getElementById('miniapp-frame').src = src
         const a = document.getElementById('direct'); a.href = target; a.textContent = target
+        document.getElementById('prov').textContent = provider
+        const sw = document.getElementById('switch')
+        sw.addEventListener('click', (e) => {
+          e.preventDefault()
+          const next = provider === 'base' ? 'farcaster' : 'base'
+          const u = new URL(location.href)
+          u.searchParams.set('provider', next)
+          location.href = u.toString()
+        })
       })()
     </script>
   </body>
   </html>
-
