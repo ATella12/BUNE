@@ -219,19 +219,6 @@ export default function App() {
     } catch (e:any) { setError(e?.message || String(e)) }
   }
 
-  // Auto-connect inside Farcaster miniapp if provider is present
-  useEffect(() => {
-    try {
-      const eth = (typeof window !== 'undefined' && (window as any).ethereum)
-      if (onMiniapp && eth && !isConnected && connStatus !== 'pending') {
-        // Ask for permission (Farcaster Wallet honors EIP-1193)
-        try { (eth as any).request?.({ method: 'eth_requestAccounts' }).catch(() => {}) } catch {}
-        connectPreferred()
-      }
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onMiniapp, isConnected, connStatus])
-
   return (
     <div className="gr-app" style={{ padding: 16 }}>
       <header className="gr-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -311,4 +298,5 @@ export default function App() {
     </div>
   )
 }
+
 
