@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain } from 'wagmi'
 import { createPublicClient, formatEther, http, encodeFunctionData, toHex, getAddress } from 'viem'
 import { base, baseSepolia } from 'viem/chains'
@@ -9,7 +9,6 @@ const truncate = (a?: string) => a ? `${a.slice(0,6)}…${a.slice(-4)}` : ''
 export default function App() {
   const { connectors, connect, status: connStatus } = useConnect()
   const { isConnected, address, chainId } = useAccount()
-  const [manualAddress, setManualAddress] = useState<string | null>(null)
   const { disconnect } = useDisconnect()
   const { writeContractAsync, status: writeStatus } = useWriteContract()
   const { switchChainAsync } = useSwitchChain()
@@ -79,30 +78,11 @@ export default function App() {
       }
       if (onMiniapp && typeof window !== 'undefined' && (window as any).ethereum?.request) {
         const eth = (window as any).ethereum
-        // Connect + ensure chain (with add chain fallback)
         try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
         const hexChain = '0x' + desiredChainId.toString(16)
-        try {
-          await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] })
-        } catch (e:any) {
-          if (e && (e.code === 4902 || String(e.message||'').includes('Unrecognized chain'))) {
-            try {
-              await eth.request({ method: 'wallet_addEthereumChain', params: [{
-                chainId: hexChain,
-                chainName: desiredChainId === base.id ? 'Base' : 'Base Sepolia',
-                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                rpcUrls: [rpcUrl],
-                blockExplorerUrls: desiredChainId === base.id ? ['https://basescan.org'] : ['https://sepolia.basescan.org']
-              }] })
-            } catch {}
-          }
-        }
-        // Determine from
-        let from: string | undefined
-        try { const accs = await eth.request({ method: 'eth_accounts' }) as string[]; from = accs?.[0] } catch {}
+        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] }) } catch {}
         const data = encodeFunctionData({ abi: abi as any, functionName: 'endAndSettle', args: [] })
-        const tx: any = { to: contract, data }
-        if (from) tx.from = from
+        const tx = { to: contract, data }
         await eth.request({ method: 'eth_sendTransaction', params: [tx] })
       } else {
         await writeContractAsync({ address: contract, abi: abi as any, functionName: 'endAndSettle', args: [], chainId: desiredChainId } as any)
@@ -120,24 +100,11 @@ export default function App() {
       // If running inside Farcaster miniapp (or any in-app wallet), prefer direct EIP-1193 send
       if (onMiniapp && typeof window !== 'undefined' && (window as any).ethereum?.request) {
         const eth = (window as any).ethereum
+        // Ensure desired chain from env (Base mainnet 8453 or Sepolia 84532)
         const hexChain = '0x' + desiredChainId.toString(16)
-        // Connect + ensure chain (with add chain fallback)
+        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] }) } catch {}
+        // Request accounts if needed
         try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
-        try {
-          await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] })
-        } catch (e:any) {
-          if (e && (e.code === 4902 || String(e.message||'').includes('Unrecognized chain'))) {
-            try {
-              await eth.request({ method: 'wallet_addEthereumChain', params: [{
-                chainId: hexChain,
-                chainName: desiredChainId === base.id ? 'Base' : 'Base Sepolia',
-                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                rpcUrls: [rpcUrl],
-                blockExplorerUrls: desiredChainId === base.id ? ['https://basescan.org'] : ['https://sepolia.basescan.org']
-              }] })
-            } catch {}
-          }
-        }
         // Pre-simulate to show gas/success
         try {
           const accs = (await eth.request({ method: 'eth_accounts' })) as string[]
@@ -156,10 +123,11 @@ export default function App() {
           }
         } catch {}
         const data = encodeFunctionData({ abi: abi as any, functionName: 'submitGuess', args: [guess] })
-        const accounts = (await eth.request({ method: 'eth_accounts' })) as string[]
-        const from = accounts?.[0]
-        const tx: any = { to: contract, data, value: toHex(entryFee) }
-        if (from) tx.from = from
+        const tx = {
+          to: contract,
+          data,
+          value: toHex(entryFee)
+        }
         const hash = await eth.request({ method: 'eth_sendTransaction', params: [tx] })
         // Optionally wait via public client
         try { await (client as any).waitForTransactionReceipt?.({ hash }) } catch {}
@@ -211,51 +179,35 @@ export default function App() {
     }
   }
 
-  function farcasterProvider(): any {
-    try {
-      const g: any = (typeof window !== 'undefined' ? (window as any) : {})
-      return g.ethereum || g.sdk?.ethereum || g.actions?.ethereum || g.farcaster?.ethereum || null
-    } catch {
-      return null
-    }
-  }
-
   async function connectPreferred() {
     try {
-      const eth = farcasterProvider() as any
-      if (onMiniapp && eth) {
-        try { const accs = await eth.request?.({ method: 'eth_requestAccounts' }) as string[]; if (accs && accs[0]) setManualAddress(accs[0]) } catch {}
-      }
-      const preferred = connectors.find((c:any) => c.id === 'injected' || /Injected/i.test(c.name)) || connectors[0]
+      const preferred = connectors.find(c => c.name === 'Injected') || connectors[0]
       if (!preferred) throw new Error('No wallet connector available')
-      try { await disconnect() } catch {}
-      try { await connect({ connector: preferred }) } catch (e:any) { try { await disconnect() } catch {}; await connect({ connector: preferred }) }
-      const hex = '0x' + desiredChainId.toString(16)
+      await connect({ connector: preferred })
       try { await switchChainAsync?.({ chainId: desiredChainId }) } catch {}
-      if (onMiniapp && eth) {
-        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] }) } catch (e:any) { if (e && (e.code === 4902 || String(e.message||'').includes('Unrecognized chain'))) { try { await eth.request({ method: 'wallet_addEthereumChain', params: [{ chainId: hex, chainName: desiredChainId === base.id ? 'Base' : 'Base Sepolia', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: [rpcUrl], blockExplorerUrls: desiredChainId === base.id ? ['https://basescan.org'] : ['https://sepolia.basescan.org'] }] }) } catch {} } }
-      }
-      setError(null)
     } catch (e:any) { setError(e?.message || String(e)) }
   }
 
-
-
-
-
-
-
-
-
-
+  // Auto-connect inside Farcaster miniapp if provider is present
+  useEffect(() => {
+    try {
+      const eth = (typeof window !== 'undefined' && (window as any).ethereum)
+      if (onMiniapp && eth && !isConnected && connStatus !== 'pending') {
+        // Ask for permission (Farcaster Wallet honors EIP-1193)
+        try { (eth as any).request?.({ method: 'eth_requestAccounts' }).catch(() => {}) } catch {}
+        connectPreferred()
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onMiniapp, isConnected, connStatus])
 
   return (
     <div className="gr-app" style={{ padding: 16 }}>
       <header className="gr-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>BUNE</h2>
+        <h2 className="gr-title" style={{ margin: 0 }}>BUNE</h2>
         <div className="gr-connect">
-          {(isConnected || !!manualAddress) ? (
-            <button className="gr-btn gr-btn-ghost" onClick={() => { try { disconnect() } catch {}; setManualAddress(null) }} title={(manualAddress || address) || ''} style={{ padding: '6px 10px' }}>{truncate((manualAddress || address) || '')}</button>
+          {isConnected ? (
+            <button className="gr-btn gr-btn-ghost" onClick={() => disconnect()} title={address || ''} style={{ padding: '6px 10px' }}>{truncate(address)}</button>
           ) : (
             <button className="gr-btn" onClick={connectPreferred} style={{ padding: '6px 10px', marginLeft: 8 }}>
               {onMiniapp ? 'Farcaster Wallet' : 'Browser Wallet'}
@@ -274,10 +226,57 @@ export default function App() {
       )}
 
       {error && <div className="gr-alert" style={{ background: '#311', border: '1px solid #633', padding: 8, marginTop: 12 }}>{error}</div>}
+      {simMsg && <div className="gr-alert" style={{ background: '#113', border: '1px solid #336', padding: 8, marginTop: 12 }}>{simMsg}</div>}
 
-      <div style={{ marginTop: 12 }}>
-        <button className="gr-btn gr-btn-ghost" onClick={refresh} style={{ padding: '6px 10px' }}>Refresh</button>
-      </div>
+      {round && (
+        <section className="gr-card" style={{ marginTop: 16, border: '1px solid #2c2c2e', borderRadius: 12, padding: 16 }}>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <div><div style={{opacity:0.7}}>Round</div><strong>#{String(roundId)}</strong></div>
+            <div><div style={{opacity:0.7}}>Active</div><strong>{round.active ? 'Yes' : 'No'}</strong></div>
+            <div><div style={{opacity:0.7}}>Ends</div><strong>{new Date(Number(round.endTime)*1000).toLocaleString()}</strong></div>
+            <div><div style={{opacity:0.7}}>Pot</div><strong>{formatEther(round.pot)} ETH</strong></div>
+            <div><div style={{opacity:0.7}}>Guesses</div><strong>{String(round.guessesCount)}</strong></div>
+            <div><div style={{opacity:0.7}}>Entry</div><strong>{formatEther(entryFee)} ETH</strong></div>
+          </div>
+          <div className="gr-countdown" style={{ marginTop: 12 }}>Countdown: {Math.floor(endsIn/60)}m {endsIn%60}s</div>
+          {isConnected && owner && address?.toLowerCase() === owner.toLowerCase() && endsIn === 0 && round.active && (
+            <div style={{marginTop:12}}>
+              <button className="gr-btn" onClick={endRound}>End + Settle (owner)</button>
+            </div>
+          )}
+          {round.active && endsIn > 0 && (
+            <div className="gr-form" style={{ marginTop: 12 }}>
+              <input className="gr-input" type="number" min={1} max={1000} value={guess||''} onChange={e=>setGuess(Number(e.target.value))} placeholder="Your guess (1..1000)" />
+              <button className="gr-btn" onClick={submit} disabled={!round?.active || endsIn===0} style={{ marginLeft: 8, padding: '8px 12px', opacity: (!round?.active || endsIn===0) ? 0.6 : 1 }}>Submit Guess</button>
+            </div>
+          )}
+          {(endsIn === 0 || !round.active) && (!owner || address?.toLowerCase() !== owner.toLowerCase()) && (
+            <div className="gr-alert" style={{ marginTop: 12 }}>
+              Round ended. Waiting for owner to settle…
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="gr-section" style={{ marginTop: 16 }}>
+        <div className="gr-section-head"><h3>Live Activity</h3><button className="gr-btn gr-btn-ghost" onClick={refresh} style={{ padding: '6px 10px' }}>Refresh</button></div>
+        <ul className="gr-list">
+          {guesses.slice().reverse().slice(0, 20).map((g, i) => (
+            <li key={i} className="gr-list-item"><span className="gr-tag">{truncate(g.player)}</span> guessed <strong>{g.number}</strong> at {new Date(Number(g.timestamp)*1000).toLocaleTimeString()}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="gr-section" style={{ marginTop: 16 }}>
+        <h3>History (latest)</h3>
+        {winners.length === 0 ? <p>No winners yet.</p> : (
+          <ul className="gr-list">
+            {winners.map((w, idx) => (
+              <li key={idx} className="gr-list-item">Round #{String(w.roundId)} — Winner {truncate(w.winner)} — Target {String(w.target)} — Prize {formatEther(w.prize)} ETH</li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   )
 }
