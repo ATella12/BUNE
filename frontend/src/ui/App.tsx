@@ -78,6 +78,7 @@ export default function App() {
       }
       if (onMiniapp && typeof window !== 'undefined' && (window as any).ethereum?.request) {
         const eth = (window as any).ethereum
+        try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
         const hexChain = '0x' + desiredChainId.toString(16)
         try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] }) } catch {}
         const data = encodeFunctionData({ abi: abi as any, functionName: 'endAndSettle', args: [] })
@@ -156,7 +157,11 @@ export default function App() {
 
   const endsIn = round ? Math.max(0, Number(round.endTime) - now) : 0
 
-  const onMiniapp = typeof window !== 'undefined' && (window.location.pathname === '/miniapp' || /Farcaster|Warpcast/i.test(navigator.userAgent))
+  const onMiniapp = typeof window !== 'undefined' && (
+    window.location.pathname === '/miniapp' ||
+    /Farcaster|Warpcast/i.test(navigator.userAgent) ||
+    !!(window as any).sdk || !!(window as any).actions || !!(window as any).farcaster || (window.parent && window.parent !== window)
+  )
 
   const mismatch = isConnected && typeof chainId === 'number' && chainId !== desiredChainId
 
@@ -179,9 +184,22 @@ export default function App() {
       const preferred = connectors.find(c => c.name === 'Injected') || connectors[0]
       if (!preferred) throw new Error('No wallet connector available')
       await connect({ connector: preferred })
-      try { await switchChainAsync?.({ chainId: baseSepolia.id }) } catch {}
+      try { await switchChainAsync?.({ chainId: desiredChainId }) } catch {}
     } catch (e:any) { setError(e?.message || String(e)) }
   }
+
+  // Auto-connect inside Farcaster miniapp if provider is present
+  useEffect(() => {
+    try {
+      const eth = (typeof window !== 'undefined' && (window as any).ethereum)
+      if (onMiniapp && eth && !isConnected && connStatus !== 'connecting') {
+        // Ask for permission (Farcaster Wallet honors EIP-1193)
+        try { (eth as any).request?.({ method: 'eth_requestAccounts' }).catch(() => {}) } catch {}
+        connectPreferred()
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onMiniapp, isConnected, connStatus])
 
   return (
     <div className="gr-app" style={{ padding: 16 }}>
