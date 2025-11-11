@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { WagmiProvider, http, createConfig } from 'wagmi'
 import { base, baseSepolia } from 'viem/chains'
 import type { Chain } from 'viem/chains'
 import { injected } from 'wagmi/connectors'
