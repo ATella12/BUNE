@@ -28,7 +28,7 @@ const rpcUrl = import.meta.env.VITE_RPC_URL
 const config = createConfig({
   chains,
   connectors: [
-    injected({ shimDisconnect: true })
+    injected({ shimDisconnect: false })
   ],
   transports: {
     [base.id]: http(rpcUrl),
@@ -158,5 +158,6 @@ try {
     try { window.addEventListener('load', () => { callAllReadyVariants(); signal() }) } catch {}
   }
 } catch {}
+
 
 
