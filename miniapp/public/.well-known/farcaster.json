@@ -20,9 +20,9 @@
     "webhookUrl": "https://bune-again.vercel.app/api/webhook",
     "noindex": true,
     "tags": ["game", "base", "guess"],
-    "imageUrl": "https://placehold.co/1200x630.png",
+    "imageUrl": "https://bune-again.vercel.app/icon-512.png",
     "ogTitle": "BUNE - Guessing Game on Base",
     "ogDescription": "Guess the number and win the pot on Base.",
-    "ogImageUrl": "https://placehold.co/1200x630.png"
+    "ogImageUrl": "https://bune-again.vercel.app/icon-512.png"
   }
 }
