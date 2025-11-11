@@ -1,11 +1,9 @@
 {
-  "imageUrl": "https://placehold.co/1200x630.png",
   "accountAssociation": {
     "header": "eyJmaWQiOjIxMTYwOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGM2NUE2Q2RiODg3RDlEOUZCYzQzMGViMDA4NEI2RDI3QUFGNEM2NEYifQ",
     "payload": "eyJkb21haW4iOiJidW5lLWFnYWluLnZlcmNlbC5hcHAifQ",
     "signature": "Fg3/1SHKjuyiwPVvWcDvNXKSAWXOCP3lR/SWvT2dlMJOgdi9pFUkpDgfzSEw5A+VOEtwkEozSj0OwG8lVLlzExs="
   },
-  "baseBuilder": { "ownerAddress": "0xd07AB0f856590512AeFAd6d593f0B58794b51753" },
   "miniapp": {
     "version": "1",
     "name": "BUNE",
@@ -26,16 +24,5 @@
     "ogTitle": "BUNE - Guessing Game on Base",
     "ogDescription": "Guess the number and win the pot on Base.",
     "ogImageUrl": "https://placehold.co/1200x630.png"
-  },
-  "frame": {
-    "version": "1",
-    "name": "Example Frame",
-    "iconUrl": "https://bune-again.vercel.app/icon-512.png",
-    "homeUrl": "https://bune-again.vercel.app",
-    "imageUrl": "https://placehold.co/1200x630.png",
-    "buttonTitle": "Check this out",
-    "splashImageUrl": "https://placehold.co/1200x800.png",
-    "splashBackgroundColor": "#eeccff",
-    "webhookUrl": "https://bune-again.vercel.app/api/webhook"
   }
 }
