@@ -1,6 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { WagmiProvider, http, createConfig } from 'wagmi'
+// Prefer first-party SDK import for iOS surfaces
+let fcSdk: any = null as any
+try {
+  // Dynamically require to avoid breaking non-miniapp builds
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  fcSdk = require('@farcaster/miniapp-sdk')?.sdk ?? null
+} catch {}
 import { base, baseSepolia } from 'viem/chains'
 import type { Chain } from 'viem/chains'
 import { injected } from 'wagmi/connectors'
@@ -69,6 +76,7 @@ try {
     const callAllReadyVariants = () => {
       try {
         const g: any = (window as any)
+        if (fcSdk?.actions?.ready) fcSdk.actions.ready()
         if (g.sdk?.actions?.ready) g.sdk.actions.ready()
         if (g.actions?.ready) g.actions.ready()
         if (g.farcaster?.actions?.ready) g.farcaster.actions.ready()
@@ -92,6 +100,8 @@ try {
 
   // Initial attempt right after mount
   signal()
+  // Try imported SDK immediately for iOS
+  try { if (fcSdk?.actions?.ready) fcSdk.actions.ready() } catch {}
 
   // If SDK not present, inject it per docs and call ready on load
   try {
