@@ -192,7 +192,7 @@ export default function App() {
   useEffect(() => {
     try {
       const eth = (typeof window !== 'undefined' && (window as any).ethereum)
-      if (onMiniapp && eth && !isConnected && connStatus !== 'connecting') {
+      if (onMiniapp && eth && !isConnected && connStatus !== 'pending') {
         // Ask for permission (Farcaster Wallet honors EIP-1193)
         try { (eth as any).request?.({ method: 'eth_requestAccounts' }).catch(() => {}) } catch {}
         connectPreferred()
