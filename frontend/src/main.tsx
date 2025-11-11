@@ -53,14 +53,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 // Signal readiness to Farcaster/Base Mini App hosts so splash hides
 try {
   if (typeof window !== 'undefined') {
-    const msgVariants = [
+    const msgVariants: any[] = [
+      // Object-style messages
+      { type: 'sdk.actions.ready' },
+      { event: 'sdk.actions.ready' },
+      { action: 'sdk.actions.ready' },
+      { type: 'actions.ready' },
+      { event: 'actions.ready' },
       { type: 'miniapp.ready' },
       { type: 'miniapp_ready' },
       { type: 'base.miniapp.ready' },
       { type: 'ready' },
-      // Farcaster Mini Apps SDK compatibility
-      { type: 'sdk.actions.ready' },
-      { type: 'actions.ready' }
+      { event: 'ready' }
+    ]
+    const strVariants: any[] = [
+      'sdk.actions.ready', 'actions.ready', 'miniapp.ready', 'miniapp_ready', 'base.miniapp.ready', 'ready', 'SDK_READY'
     ]
     const signal = () => {
       if ((window as any).__miniappReadySignalled) return
@@ -69,6 +76,7 @@ try {
       try {
         const target: any = (window.parent && window.parent !== window) ? window.parent : window
         msgVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
+        strVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
       } catch {}
       try {
         const g: any = (window as any)
@@ -129,6 +137,7 @@ try {
           try {
             const target: any = (window.parent && window.parent !== window) ? window.parent : window
             msgVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
+            strVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
           } catch {}
         }
       } catch {}
