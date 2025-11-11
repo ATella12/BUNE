@@ -69,6 +69,18 @@ try {
     const strVariants: any[] = [
       'sdk.actions.ready', 'actions.ready', 'miniapp.ready', 'miniapp_ready', 'base.miniapp.ready', 'ready', 'SDK_READY'
     ]
+    const callAllReadyVariants = () => {
+      try {
+        const g: any = (window as any)
+        if (g.sdk?.actions?.ready) g.sdk.actions.ready()
+        if (g.actions?.ready) g.actions.ready()
+        if (g.farcaster?.actions?.ready) g.farcaster.actions.ready()
+        if (typeof g.farcaster?.ready === 'function') g.farcaster.ready()
+        if (g.miniapp?.actions?.ready) g.miniapp.actions.ready()
+        if (typeof g.miniapp?.ready === 'function') g.miniapp.ready()
+      } catch {}
+    }
+
     const signal = () => {
       if ((window as any).__miniappReadySignalled) return
       ;(window as any).__miniappReadySignalled = true
@@ -78,11 +90,7 @@ try {
         msgVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
         strVariants.forEach((m) => { try { target.postMessage(m, '*') } catch {} })
       } catch {}
-      try {
-        const g: any = (window as any)
-        if (g.sdk && g.sdk.actions && typeof g.sdk.actions.ready === 'function') g.sdk.actions.ready()
-        if (g.actions && typeof g.actions.ready === 'function') g.actions.ready()
-      } catch {}
+      callAllReadyVariants()
     }
 
   // Initial attempt right after mount
@@ -128,10 +136,15 @@ try {
       tries += 1
       try {
         const g: any = (window as any)
-        if (g.sdk && g.sdk.actions && typeof g.sdk.actions.ready === 'function') {
-          g.sdk.actions.ready(); signal(); clearInterval(iv)
-        } else if (g.actions && typeof g.actions.ready === 'function') {
-          g.actions.ready(); signal(); clearInterval(iv)
+        if (
+          (g.sdk?.actions?.ready) ||
+          (g.actions?.ready) ||
+          (g.farcaster?.actions?.ready) ||
+          (typeof g.farcaster?.ready === 'function') ||
+          (g.miniapp?.actions?.ready) ||
+          (typeof g.miniapp?.ready === 'function')
+        ) {
+          callAllReadyVariants(); signal(); clearInterval(iv)
         } else {
           // re-signal via postMessage until SDK listens
           try {
@@ -143,5 +156,9 @@ try {
       } catch {}
       if (tries > 20) clearInterval(iv)
     }, 250)
+
+    // Also try on DOM ready and load events
+    try { document.addEventListener('DOMContentLoaded', () => { callAllReadyVariants(); signal() }) } catch {}
+    try { window.addEventListener('load', () => { callAllReadyVariants(); signal() }) } catch {}
   }
 } catch {}
