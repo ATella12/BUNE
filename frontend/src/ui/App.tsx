@@ -211,6 +211,15 @@ export default function App() {
     }
   }
 
+  function farcasterProvider(): any {
+    try {
+      const g: any = (typeof window !== 'undefined' ? (window as any) : {})
+      return g.ethereum || g.sdk?.ethereum || g.actions?.ethereum || g.farcaster?.ethereum || null
+    } catch {
+      return null
+    }
+  }
+
   async function connectPreferred() {
     try {
       const eth = farcasterProvider() as any
