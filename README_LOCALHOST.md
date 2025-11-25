@@ -6,7 +6,7 @@ This repo now includes a scaffold for a round-based number guessing game built f
 
 - File: `contracts/src/GuessingGame.sol`
 - Summary:
-  - Rounds default to 2 hours. Admin can change via `setRoundDuration`.
+  - Rounds default to 2 days. Admin can change via `setRoundDuration`.
   - Entry fee default: `0.00001 ETH` (admin can update with `setEntryFeeWei`).
   - Before each round, a target number in `[1..1000]` is derived from a commit (replace with VRF in production). The round is marked active.
   - Users can submit guesses (`submitGuess(uint32) payable`) multiple times while active; each guess costs the entry fee and is recorded.

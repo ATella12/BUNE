@@ -7,7 +7,7 @@ async function main() {
   console.log("Deployer:", deployer.address);
 
   const entryFee = BigInt(process.env.ENTRY_FEE_WEI || "10000000000000");
-  const roundDuration = Number(process.env.ROUND_DURATION_SECONDS || "7200");
+  const roundDuration = Number(process.env.ROUND_DURATION_SECONDS || "172800"); // default 2 days
 
   const GuessRounds = await ethers.getContractFactory("GuessRounds");
   const contract = await GuessRounds.deploy(entryFee, roundDuration);

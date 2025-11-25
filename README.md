@@ -19,7 +19,7 @@ This repo contains a round-based number guessing dApp designed for Base, using C
 ## Smart Contract
 
 Features:
-- Rounds last `roundDuration` seconds (default 2 hours)
+- Rounds last `roundDuration` seconds (default 2 days)
 - Single prize pool per round; `entryFeeWei` (default 0.00001 ETH) per guess
 - Target number [1..1000] is set by Chainlink VRF before each round starts
 - Users can submit many guesses; stored with timestamps
@@ -50,7 +50,7 @@ VRF_SUBSCRIPTION_ID=1234
 VRF_CALLBACK_GAS_LIMIT=250000
 VRF_REQUEST_CONFIRMATIONS=3
 ENTRY_FEE_WEI=10000000000000
-ROUND_DURATION_SECONDS=7200
+ROUND_DURATION_SECONDS=172800
 ```
 
 Install and compile:

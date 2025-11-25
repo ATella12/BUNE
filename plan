@@ -24,7 +24,7 @@ Repo Layout (proposed)
 
 Contract Design (GuessRounds)
 - Parameters
-  - `entryFeeWei` (default 0.00001 ETH), `roundDuration` (default 2h), `paused` toggle
+  - `entryFeeWei` (default 0.00001 ETH), `roundDuration` (default 2d), `paused` toggle
   - VRF config: `coordinator`, `keyHash`, `subId`, `callbackGasLimit`, `requestConfirmations`
 - State
   - `currentRoundId`

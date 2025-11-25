@@ -8,7 +8,7 @@ pragma solidity ^0.8.24;
 contract GuessingGame {
     // --- Constants / Defaults ---
     uint256 public constant FEE_DENOMINATOR = 10_000; // basis points
-    uint256 public constant DEFAULT_DURATION = 2 hours;
+    uint256 public constant DEFAULT_DURATION = 2 days;
     uint256 public constant DEFAULT_ENTRY_FEE_WEI = 10_000_000_000_000; // 0.00001 ETH
     uint16 public constant OWNER_PAYOUT_BPS = 1000; // 10%
     uint256 public constant MIN_NUMBER = 1;
