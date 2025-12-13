@@ -62,6 +62,7 @@ export default function App() {
               params: [{
                 to: first.to,
                 data: txData,
+                from: address as any,
                 value: first.value !== undefined ? toHex(first.value) : undefined
               }]
             })

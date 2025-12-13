@@ -8,6 +8,11 @@ export default defineConfig({
   build: {
     sourcemap: false
   },
+  resolve: {
+    alias: {
+      'ox/erc8021': '/src/lib/erc8021.ts'
+    }
+  },
   optimizeDeps: {
     // We are not using WalletConnect in this build; exclude to avoid esbuild map parsing issues
     exclude: [
