@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useSendCalls, useSwitchChain } from 'wagmi'
 import { createPublicClient, formatEther, http, encodeFunctionData, toHex, getAddress } from 'viem'
 import { base, baseSepolia } from 'viem/chains'
 import { abi } from '../abi'
+import { appendBuilderCodeSuffix, sendCallsCapabilities } from '../lib/builderCode'
 
-const truncate = (a?: string) => a ? `${a.slice(0,6)}…${a.slice(-4)}` : ''
+const truncate = (a?: string) => a ? `${a.slice(0,6)}ƒ?İ${a.slice(-4)}` : ''
 
 export default function App() {
   const { connectors, connect, status: connStatus } = useConnect()
   const { isConnected, address, chainId } = useAccount()
   const { disconnect } = useDisconnect()
-  const { writeContractAsync, status: writeStatus } = useWriteContract()
   const { switchChainAsync } = useSwitchChain()
+  const { sendCallsAsync } = useSendCalls()
   const [error, setError] = useState<string | null>(null)
   const [round, setRound] = useState<any>(null)
   const [roundId, setRoundId] = useState<bigint>(0n)
@@ -27,6 +28,50 @@ export default function App() {
   const desiredChainId = Number(import.meta.env.VITE_CHAIN_ID || 84532)
   const desiredChain = desiredChainId === base.id ? base : baseSepolia
   const client = useMemo(() => createPublicClient({ chain: desiredChain, transport: http(rpcUrl) }), [rpcUrl, desiredChainId])
+  const desiredChainHex = '0x' + desiredChainId.toString(16)
+
+  const sendWithBuilderCode = async (calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) => {
+    try {
+      await (sendCallsAsync as any)({ calls, chainId: desiredChainId, capabilities: sendCallsCapabilities as any })
+      return
+    } catch (e) {
+      const eth = (typeof window !== 'undefined' && (window as any).ethereum)
+      if (eth?.request) {
+        try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
+        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: desiredChainHex }] }) } catch {}
+        try {
+          await eth.request({
+            method: 'wallet_sendCalls',
+            params: [{
+              calls: calls.map((c) => ({
+                to: c.to,
+                data: c.data,
+                value: c.value !== undefined ? toHex(c.value) : undefined
+              })),
+              capabilities: sendCallsCapabilities
+            }]
+          })
+          return
+        } catch (e2) {
+          try {
+            const first = calls[0]
+            if (!first) throw e2
+            const txData = appendBuilderCodeSuffix((first.data || '0x') as `0x${string}`)
+            await eth.request({
+              method: 'eth_sendTransaction',
+              params: [{
+                to: first.to,
+                data: txData,
+                value: first.value !== undefined ? toHex(first.value) : undefined
+              }]
+            })
+            return
+          } catch {}
+        }
+      }
+      throw e
+    }
+  }
 
   async function refresh() {
     try {
@@ -76,17 +121,8 @@ export default function App() {
       if (!address || !owner || address.toLowerCase() !== owner.toLowerCase()) {
         throw new Error('Only owner can end/settle')
       }
-      if (onMiniapp && typeof window !== 'undefined' && (window as any).ethereum?.request) {
-        const eth = (window as any).ethereum
-        try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
-        const hexChain = '0x' + desiredChainId.toString(16)
-        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] }) } catch {}
-        const data = encodeFunctionData({ abi: abi as any, functionName: 'endAndSettle', args: [] })
-        const tx = { to: contract, data }
-        await eth.request({ method: 'eth_sendTransaction', params: [tx] })
-      } else {
-        await writeContractAsync({ address: contract, abi: abi as any, functionName: 'endAndSettle', args: [], chainId: desiredChainId } as any)
-      }
+      const data = encodeFunctionData({ abi: abi as any, functionName: 'endAndSettle', args: [] })
+      await sendWithBuilderCode([{ to: contract, data }])
       await refresh()
     } catch (e:any) {
       setError(e?.shortMessage || e?.message || String(e))
@@ -97,60 +133,25 @@ export default function App() {
     if (!guess || guess < 1 || guess > 1000) { setError('Enter 1..1000'); return }
     try {
       setError(null)
-      // If running inside Farcaster miniapp (or any in-app wallet), prefer direct EIP-1193 send
-      if (onMiniapp && typeof window !== 'undefined' && (window as any).ethereum?.request) {
-        const eth = (window as any).ethereum
-        // Ensure desired chain from env (Base mainnet 8453 or Sepolia 84532)
-        const hexChain = '0x' + desiredChainId.toString(16)
-        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChain }] }) } catch {}
-        // Request accounts if needed
-        try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
-        // Pre-simulate to show gas/success
-        try {
-          const accs = (await eth.request({ method: 'eth_accounts' })) as string[]
-          const from = accs && accs[0] as `0x${string}`
-          if (from) {
-            const sim: any = await (client as any).simulateContract({
-              account: from,
-              address: contract,
-              abi: abi as any,
-              functionName: 'submitGuess',
-              args: [guess],
-              value: entryFee
-            })
-            const req: any = sim?.request || {}
-            setSimMsg(`Simulation OK • estGas=${req.gas ? String(req.gas) : 'n/a'}`)
-          }
-        } catch {}
-        const data = encodeFunctionData({ abi: abi as any, functionName: 'submitGuess', args: [guess] })
-        const tx = {
-          to: contract,
-          data,
-          value: toHex(entryFee)
-        }
-        const hash = await eth.request({ method: 'eth_sendTransaction', params: [tx] })
-        // Optionally wait via public client
-        try { await (client as any).waitForTransactionReceipt?.({ hash }) } catch {}
-      } else {
-        // Fallback to wagmi/viem write
-        // Pre-simulate first; if it throws we surface the message and abort
-        try {
-          const sim: any = await (client as any).simulateContract({
-            account: address as any,
-            address: contract,
-            abi: abi as any,
-            functionName: 'submitGuess',
-            args: [guess],
-            value: entryFee
-          })
-          const req: any = sim?.request || {}
-          setSimMsg(`Simulation OK • estGas=${req.gas ? String(req.gas) : 'n/a'}`)
-        } catch (e:any) {
-          setError(e?.message || String(e))
-          return
-        }
-        await writeContractAsync({ address: contract, abi: abi as any, functionName: 'submitGuess', args: [guess as any], value: entryFee, chainId: desiredChainId } as any)
+      // Pre-simulate first; if it throws we surface the message and abort
+      try {
+        const sim: any = await (client as any).simulateContract({
+          account: address as any,
+          address: contract,
+          abi: abi as any,
+          functionName: 'submitGuess',
+          args: [guess],
+          value: entryFee
+        })
+        const req: any = sim?.request || {}
+        setSimMsg(`Simulation OK ƒ?½ estGas=${req.gas ? String(req.gas) : 'n/a'}`)
+      } catch (e:any) {
+        setError(e?.message || String(e))
+        return
       }
+      const data = encodeFunctionData({ abi: abi as any, functionName: 'submitGuess', args: [guess] })
+      const calls = [{ to: contract, data, value: entryFee }]
+      await sendWithBuilderCode(calls)
       await refresh()
     } catch (e: any) { setError(e?.shortMessage || e?.message || String(e)) }
   }
@@ -252,7 +253,7 @@ export default function App() {
           )}
           {(endsIn === 0 || !round.active) && (!owner || address?.toLowerCase() !== owner.toLowerCase()) && (
             <div className="gr-alert" style={{ marginTop: 12 }}>
-              Round ended. Waiting for owner to settle…
+              Round ended. Waiting for owner to settleƒ?İ
             </div>
           )}
         </section>
@@ -272,7 +273,7 @@ export default function App() {
         {winners.length === 0 ? <p>No winners yet.</p> : (
           <ul className="gr-list">
             {winners.map((w, idx) => (
-              <li key={idx} className="gr-list-item">Round #{String(w.roundId)} — Winner {truncate(w.winner)} — Target {String(w.target)} — Prize {formatEther(w.prize)} ETH</li>
+              <li key={idx} className="gr-list-item">Round #{String(w.roundId)} ƒ?" Winner {truncate(w.winner)} ƒ?" Target {String(w.target)} ƒ?" Prize {formatEther(w.prize)} ETH</li>
             ))}
           </ul>
         )}

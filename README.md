@@ -113,6 +113,10 @@ Features:
 - Submit guess form (multiple submissions supported)
 - Round history (latest winners; extend for pagination)
 
+## Builder Code Attribution
+- Builder codes enabled: frontend/src/lib/builderCode.ts reads VITE_BASE_BUILDER_CODE / NEXT_PUBLIC_BASE_BUILDER_CODE (defaults to bc_prv2f8tm) and derives dataSuffix via Attribution.toDataSuffix.
+- All tx sends use useSendCalls / wallet_sendCalls with capabilities: { dataSuffix }, falling back to appending the suffix onto calldata for legacy eth_sendTransaction. Trigger a tx and confirm the calldata ends with the suffix to verify.
+
 ## Farcaster Miniapp Wrapper
 
 - Manifest: `frontend/public/miniapp.json`. See https://miniapps.farcaster.xyz/docs/getting-started
