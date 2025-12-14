@@ -5,7 +5,7 @@ import { base, baseSepolia } from 'viem/chains'
 import { abi } from '../abi'
 import { appendBuilderCodeSuffix, sendCallsCapabilities } from '../lib/builderCode'
 
-const truncate = (a?: string) => a ? `${a.slice(0,6)}ƒ?İ${a.slice(-4)}` : ''
+const truncate = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '')
 
 export default function App() {
   const { connectors, connect, status: connStatus } = useConnect()
