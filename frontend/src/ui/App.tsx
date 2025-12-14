@@ -145,7 +145,7 @@ export default function App() {
           value: entryFee
         })
         const req: any = sim?.request || {}
-        setSimMsg(`Simulation OK ƒ?½ estGas=${req.gas ? String(req.gas) : 'n/a'}`)
+        setSimMsg(`Simulation OK - estGas=${req.gas ? String(req.gas) : 'n/a'}`)
       } catch (e:any) {
         setError(e?.message || String(e))
         return
