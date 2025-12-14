@@ -274,7 +274,7 @@ export default function App() {
         {winners.length === 0 ? <p>No winners yet.</p> : (
           <ul className="gr-list">
             {winners.map((w, idx) => (
-              <li key={idx} className="gr-list-item">Round #{String(w.roundId)} ƒ?" Winner {truncate(w.winner)} ƒ?" Target {String(w.target)} ƒ?" Prize {formatEther(w.prize)} ETH</li>
+              <li key={idx} className="gr-list-item">Round #{String(w.roundId)} - Winner {truncate(w.winner)} - Target {String(w.target)} - Prize {formatEther(w.prize)} ETH</li>
             ))}
           </ul>
         )}
