@@ -9,7 +9,6 @@ export const farcasterConnector = farcasterMiniApp()
 export const injectedConnector = injected({ shimDisconnect: false })
 
 export const wagmiConfig = createConfig({
-  autoConnect: true, // UI handles miniapp vs web gating
   chains: [base],
   connectors: [farcasterConnector, injectedConnector],
   transports: {

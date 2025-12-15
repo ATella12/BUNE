@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAccount, useConnect, useDisconnect, useSendCalls, useSwitchChain } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi'
+import { useSendCalls } from 'wagmi/experimental'
 import { createPublicClient, formatEther, http, encodeFunctionData, toHex, getAddress } from 'viem'
 import { base } from 'viem/chains'
 import { abi } from '../abi'
 import { appendBuilderCodeSuffix, sendCallsCapabilities } from '../lib/builderCode'
 import { detectMiniApp } from '../lib/miniappEnv'
-import { farcasterConnector, injectedConnector } from '../wagmiConfig'
 
 const truncate = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '')
 
 export default function App() {
-  const { connectors, connect, status: connStatus } = useConnect()
+  const { connectors, connectAsync, status: connStatus } = useConnect()
   const { isConnected, address, chainId, connector: activeConnector } = useAccount()
   const { disconnect } = useDisconnect()
   const { switchChainAsync } = useSwitchChain()
@@ -179,14 +179,23 @@ export default function App() {
     }
   }
 
+  const findFarcasterConnector = () =>
+    connectors.find((c) => {
+      const t = (c as any).type?.toString().toLowerCase?.() || ''
+      const n = c.name?.toLowerCase() || ''
+      return t.includes('farcaster') || n.includes('farcaster')
+    })
+
+  const findInjectedConnector = () =>
+    connectors.find((c) => (c as any).type === 'injected')
+
   async function connectPreferred() {
     try {
-      const miniApp = connectors.find((c) => c.id === farcasterConnector.id) || farcasterConnector
-      const injectedPreferred =
-        connectors.find((c) => c.id === injectedConnector.id || c.name === 'Injected') || connectors[1] || connectors[0]
+      const miniApp = findFarcasterConnector() || connectors[0]
+      const injectedPreferred = findInjectedConnector() || connectors[1] || connectors[0]
       const connectorToUse = isMiniApp ? miniApp : injectedPreferred
       if (!connectorToUse) throw new Error('No wallet connector available')
-      await connect({ connector: connectorToUse })
+      await connectAsync({ connector: connectorToUse })
       try { await switchChainAsync?.({ chainId: desiredChainId }) } catch {}
     } catch (e:any) { setError(e?.message || String(e)) }
   }
@@ -200,22 +209,28 @@ export default function App() {
     if (!isMiniApp) return
     if (autoConnectDone) return
     if (connStatus === 'pending') return
-    const useFarcaster = connectors.find((c) => c.id === farcasterConnector.id) || farcasterConnector
-    connect({ connector: useFarcaster }).finally(() => setAutoConnectDone(true))
+    const useFarcaster = findFarcasterConnector() || connectors[0]
+    ;(async () => {
+      try { await connectAsync({ connector: useFarcaster }) } catch {}
+      finally { setAutoConnectDone(true) }
+    })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMiniApp, connStatus])
 
   // If injected auto-connected inside mini app, switch to Farcaster
   useEffect(() => {
     if (!isMiniApp) return
-    if (activeConnector && activeConnector.id === injectedConnector.id) {
-      disconnect().then(() => {
-        const useFarcaster = connectors.find((c) => c.id === farcasterConnector.id) || farcasterConnector
-        connect({ connector: useFarcaster }).finally(() => setAutoConnectDone(true))
-      }).catch(() => {})
+    const injectedActive = (activeConnector as any)?.type === 'injected'
+    if (injectedActive) {
+      (async () => {
+        try { await disconnect() } catch {}
+        const useFarcaster = findFarcasterConnector() || connectors[0]
+        try { await connectAsync({ connector: useFarcaster }) } catch {}
+        finally { setAutoConnectDone(true) }
+      })()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMiniApp, activeConnector?.id])
+  }, [isMiniApp, activeConnector?.name])
 
   return (
     <div className="gr-app" style={{ padding: 16 }}>
