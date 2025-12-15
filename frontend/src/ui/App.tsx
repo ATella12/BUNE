@@ -10,7 +10,10 @@ import { detectMiniApp } from '../lib/miniappEnv'
 const truncate = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '')
 
 export default function App() {
-  const { connectors, connectAsync, status: connStatus } = useConnect()
+  const connect = useConnect()
+  const connectors = connect.connectors as any[]
+  const connectAsync = connect.connectAsync as any
+  const connStatus = connect.status
   const { isConnected, address, chainId, connector: activeConnector } = useAccount()
   const { disconnect } = useDisconnect()
   const { switchChainAsync } = useSwitchChain()
@@ -34,12 +37,14 @@ export default function App() {
   const client = useMemo(() => createPublicClient({ chain: desiredChain, transport: http(rpcUrl) }), [rpcUrl])
   const desiredChainHex = '0x' + desiredChainId.toString(16)
 
+  const activeConnectorAny = activeConnector as any
+
   const isFarcasterWallet = useMemo(() => {
-    if (!isMiniApp || !activeConnector) return false
-    const t = ((activeConnector as any).type || '').toString().toLowerCase()
-    const n = (activeConnector.name || '').toLowerCase()
+    if (!isMiniApp || !activeConnectorAny) return false
+    const t = (activeConnectorAny.type || '').toString().toLowerCase()
+    const n = (activeConnectorAny.name || '').toLowerCase()
     return t.includes('farcaster') || n.includes('farcaster')
-  }, [isMiniApp, activeConnector])
+  }, [isMiniApp, activeConnectorAny])
 
   const sendWithBuilderCode = async (calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) => {
     try {
