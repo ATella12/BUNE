@@ -14,10 +14,15 @@ export default function App() {
   const connectors = connect.connectors as any[]
   const connectAsync = connect.connectAsync as any
   const connStatus = connect.status
-  const { isConnected, address, chainId, connector: activeConnector } = useAccount()
+  const account = useAccount() as any
+  const isConnected = account.isConnected as boolean
+  const address = account.address as `0x${string}` | undefined
+  const chainId = account.chainId as number | undefined
+  const activeConnector = account.connector as any
   const { disconnect } = useDisconnect()
   const { switchChainAsync } = useSwitchChain()
-  const { sendCallsAsync } = useSendCalls()
+  const sendCalls = useSendCalls() as any
+  const sendCallsAsync = sendCalls.sendCallsAsync as any
   const [error, setError] = useState<string | null>(null)
   const [round, setRound] = useState<any>(null)
   const [roundId, setRoundId] = useState<bigint>(0n)
@@ -37,14 +42,11 @@ export default function App() {
   const client = useMemo(() => createPublicClient({ chain: desiredChain, transport: http(rpcUrl) }), [rpcUrl])
   const desiredChainHex = '0x' + desiredChainId.toString(16)
 
-  const activeConnectorAny = activeConnector as any
-
-  const isFarcasterWallet = useMemo(() => {
-    if (!isMiniApp || !activeConnectorAny) return false
-    const t = (activeConnectorAny.type || '').toString().toLowerCase()
-    const n = (activeConnectorAny.name || '').toLowerCase()
-    return t.includes('farcaster') || n.includes('farcaster')
-  }, [isMiniApp, activeConnectorAny])
+  const isFarcasterWallet =
+    Boolean(isMiniApp) &&
+    Boolean(activeConnector) &&
+    (String((activeConnector as any).type || '').toLowerCase().includes('farcaster') ||
+      String((activeConnector as any).name || '').toLowerCase().includes('farcaster'))
 
   const sendWithBuilderCode = async (calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) => {
     try {
@@ -195,21 +197,21 @@ export default function App() {
     }
   }
 
-  const findFarcasterConnector = () =>
+  const findFarcasterConnector = (): any =>
     connectors.find((c) => {
       const t = (c as any).type?.toString().toLowerCase?.() || ''
       const n = c.name?.toLowerCase() || ''
       return t.includes('farcaster') || n.includes('farcaster')
     })
 
-  const findInjectedConnector = () =>
+  const findInjectedConnector = (): any =>
     connectors.find((c) => (c as any).type === 'injected')
 
   async function connectPreferred() {
     try {
       const miniApp = findFarcasterConnector() || connectors[0]
       const injectedPreferred = findInjectedConnector() || connectors[1] || connectors[0]
-      const connectorToUse = isMiniApp ? miniApp : injectedPreferred
+      const connectorToUse: any = isMiniApp ? miniApp : injectedPreferred
       if (!connectorToUse) throw new Error('No wallet connector available')
       await connectAsync({ connector: connectorToUse })
       try { await switchChainAsync?.({ chainId: desiredChainId }) } catch {}
