@@ -34,9 +34,20 @@ export default function App() {
   const client = useMemo(() => createPublicClient({ chain: desiredChain, transport: http(rpcUrl) }), [rpcUrl])
   const desiredChainHex = '0x' + desiredChainId.toString(16)
 
+  const isFarcasterWallet = useMemo(() => {
+    if (!isMiniApp || !activeConnector) return false
+    const t = ((activeConnector as any).type || '').toString().toLowerCase()
+    const n = (activeConnector.name || '').toLowerCase()
+    return t.includes('farcaster') || n.includes('farcaster')
+  }, [isMiniApp, activeConnector])
+
   const sendWithBuilderCode = async (calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) => {
     try {
-      await (sendCallsAsync as any)({ calls, chainId: desiredChainId, capabilities: sendCallsCapabilities as any })
+      if (isFarcasterWallet) {
+        await sendCallsAsync({ calls, chainId: desiredChainId, capabilities: sendCallsCapabilities as any })
+        return
+      }
+      await sendCallsAsync({ calls, chainId: desiredChainId, capabilities: sendCallsCapabilities as any })
       return
     } catch (e) {
       const eth = (typeof window !== 'undefined' && (window as any).ethereum)
@@ -149,7 +160,7 @@ export default function App() {
           value: entryFee
         })
         const req: any = sim?.request || {}
-        setSimMsg(`Simulation OK - estGas=${req.gas ? String(req.gas) : 'n/a'}`)
+        setSimMsg(null) // Successful sim; keep UI clean
       } catch (e:any) {
         setError(e?.message || String(e))
         return
@@ -244,9 +255,6 @@ export default function App() {
               {isMiniApp ? 'Farcaster Wallet' : 'Browser Wallet'}
             </button>
           )}
-          <div style={{ fontSize: 11, opacity: 0.7, marginLeft: 8 }}>
-            Host: {isMiniApp === null ? 'Detecting' : isMiniApp ? 'Warpcast' : 'Web'} | Connector: {isMiniApp ? 'farcaster' : 'injected'}
-          </div>
         </div>
       </header>
 
@@ -259,8 +267,13 @@ export default function App() {
         </div>
       )}
 
-      {error && <div className="gr-alert" style={{ background: '#311', border: '1px solid #633', padding: 8, marginTop: 12 }}>{error}</div>}
-      {simMsg && <div className="gr-alert" style={{ background: '#113', border: '1px solid #336', padding: 8, marginTop: 12 }}>{simMsg}</div>}
+      {error && (
+        <div className="gr-alert" style={{ background: '#311', border: '1px solid #633', padding: 8, marginTop: 12 }}>
+          {/invalid parameters/i.test(error) || /rpc/i.test(error)
+            ? 'Wallet rejected the request. Please try again.'
+            : error}
+        </div>
+      )}
 
       {round && (
         <section className="gr-card" style={{ marginTop: 16, border: '1px solid #2c2c2e', borderRadius: 12, padding: 16 }}>
@@ -286,7 +299,7 @@ export default function App() {
           )}
           {(endsIn === 0 || !round.active) && (!owner || address?.toLowerCase() !== owner.toLowerCase()) && (
             <div className="gr-alert" style={{ marginTop: 12 }}>
-              Round ended. Waiting for owner to settleƒ?İ
+              Round ended. Waiting for the owner to settle.
             </div>
           )}
         </section>
