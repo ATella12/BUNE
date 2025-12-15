@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAccount, useConnect, useDisconnect, useSendCalls, useSwitchChain } from 'wagmi'
 import { createPublicClient, formatEther, http, encodeFunctionData, toHex, getAddress } from 'viem'
-import { base, baseSepolia } from 'viem/chains'
+import { base } from 'viem/chains'
 import { abi } from '../abi'
 import { appendBuilderCodeSuffix, sendCallsCapabilities } from '../lib/builderCode'
+import { detectMiniApp } from '../lib/miniappEnv'
+import { farcasterConnector, injectedConnector } from '../wagmiConfig'
 
 const truncate = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '')
 
 export default function App() {
   const { connectors, connect, status: connStatus } = useConnect()
-  const { isConnected, address, chainId } = useAccount()
+  const { isConnected, address, chainId, connector: activeConnector } = useAccount()
   const { disconnect } = useDisconnect()
   const { switchChainAsync } = useSwitchChain()
   const { sendCallsAsync } = useSendCalls()
@@ -23,11 +25,13 @@ export default function App() {
   const [now, setNow] = useState<number>(Math.floor(Date.now()/1000))
   const [simMsg, setSimMsg] = useState<string | null>(null)
   const [owner, setOwner] = useState<string | null>(null)
+  const [isMiniApp, setIsMiniApp] = useState<boolean | null>(null)
+  const [autoConnectDone, setAutoConnectDone] = useState(false)
   const rpcUrl = import.meta.env.VITE_RPC_URL as string
   const contract = getAddress(import.meta.env.VITE_CONTRACT_ADDRESS as string) as `0x${string}`
-  const desiredChainId = Number(import.meta.env.VITE_CHAIN_ID || 84532)
-  const desiredChain = desiredChainId === base.id ? base : baseSepolia
-  const client = useMemo(() => createPublicClient({ chain: desiredChain, transport: http(rpcUrl) }), [rpcUrl, desiredChainId])
+  const desiredChainId = base.id
+  const desiredChain = base
+  const client = useMemo(() => createPublicClient({ chain: desiredChain, transport: http(rpcUrl) }), [rpcUrl])
   const desiredChainHex = '0x' + desiredChainId.toString(16)
 
   const sendWithBuilderCode = async (calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) => {
@@ -159,12 +163,6 @@ export default function App() {
 
   const endsIn = round ? Math.max(0, Number(round.endTime) - now) : 0
 
-  const onMiniapp = typeof window !== 'undefined' && (
-    window.location.pathname === '/miniapp' ||
-    /Farcaster|Warpcast/i.test(navigator.userAgent) ||
-    !!(window as any).sdk || !!(window as any).actions || !!(window as any).farcaster || (window.parent && window.parent !== window)
-  )
-
   const mismatch = isConnected && typeof chainId === 'number' && chainId !== desiredChainId
 
   async function switchToDesired() {
@@ -183,25 +181,41 @@ export default function App() {
 
   async function connectPreferred() {
     try {
-      const preferred = connectors.find(c => c.name === 'Injected') || connectors[0]
-      if (!preferred) throw new Error('No wallet connector available')
-      await connect({ connector: preferred })
+      const miniApp = connectors.find((c) => c.id === farcasterConnector.id) || farcasterConnector
+      const injectedPreferred =
+        connectors.find((c) => c.id === injectedConnector.id || c.name === 'Injected') || connectors[1] || connectors[0]
+      const connectorToUse = isMiniApp ? miniApp : injectedPreferred
+      if (!connectorToUse) throw new Error('No wallet connector available')
+      await connect({ connector: connectorToUse })
       try { await switchChainAsync?.({ chainId: desiredChainId }) } catch {}
     } catch (e:any) { setError(e?.message || String(e)) }
   }
 
-  // Auto-connect inside Farcaster miniapp if provider is present
   useEffect(() => {
-    try {
-      const eth = (typeof window !== 'undefined' && (window as any).ethereum)
-      if (onMiniapp && eth && !isConnected && connStatus !== 'pending') {
-        // Ask for permission (Farcaster Wallet honors EIP-1193)
-        try { (eth as any).request?.({ method: 'eth_requestAccounts' }).catch(() => {}) } catch {}
-        connectPreferred()
-      }
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onMiniapp, isConnected, connStatus])
+    detectMiniApp().then(setIsMiniApp).catch(() => setIsMiniApp(false))
+  }, [])
+
+  // Auto-connect inside Farcaster mini app (avoid injected autoconnect)
+  useEffect(() => {
+    if (!isMiniApp) return
+    if (autoConnectDone) return
+    if (connStatus === 'pending') return
+    const useFarcaster = connectors.find((c) => c.id === farcasterConnector.id) || farcasterConnector
+    connect({ connector: useFarcaster }).finally(() => setAutoConnectDone(true))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMiniApp, connStatus])
+
+  // If injected auto-connected inside mini app, switch to Farcaster
+  useEffect(() => {
+    if (!isMiniApp) return
+    if (activeConnector && activeConnector.id === injectedConnector.id) {
+      disconnect().then(() => {
+        const useFarcaster = connectors.find((c) => c.id === farcasterConnector.id) || farcasterConnector
+        connect({ connector: useFarcaster }).finally(() => setAutoConnectDone(true))
+      }).catch(() => {})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMiniApp, activeConnector?.id])
 
   return (
     <div className="gr-app" style={{ padding: 16 }}>
@@ -212,9 +226,12 @@ export default function App() {
             <button className="gr-btn gr-btn-ghost" onClick={() => disconnect()} title={address || ''} style={{ padding: '6px 10px' }}>{truncate(address)}</button>
           ) : (
             <button className="gr-btn" onClick={connectPreferred} style={{ padding: '6px 10px', marginLeft: 8 }}>
-              {onMiniapp ? 'Farcaster Wallet' : 'Browser Wallet'}
+              {isMiniApp ? 'Farcaster Wallet' : 'Browser Wallet'}
             </button>
           )}
+          <div style={{ fontSize: 11, opacity: 0.7, marginLeft: 8 }}>
+            Host: {isMiniApp === null ? 'Detecting' : isMiniApp ? 'Warpcast' : 'Web'} | Connector: {isMiniApp ? 'farcaster' : 'injected'}
+          </div>
         </div>
       </header>
 

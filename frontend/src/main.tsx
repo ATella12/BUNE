@@ -1,48 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { sdk as farcasterSdk } from '@farcaster/miniapp-sdk'
-import { WagmiProvider, http, createConfig } from 'wagmi'
-import { base, baseSepolia } from 'viem/chains'
-import type { Chain } from 'viem/chains'
-import { injected } from 'wagmi/connectors'
+import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './ui/App'
 import './style.css'
-
-// Prefer Mini App injected EIP-1193 provider if present (Farcaster Wallet)
-try {
-  const g: any = (globalThis as any)
-  if (g && g.sdk && g.sdk.ethereum && !g.ethereum) {
-    g.ethereum = g.sdk.ethereum
-  } else if (g && g.actions && g.actions.ethereum && !g.ethereum) {
-    g.ethereum = g.actions.ethereum
-  }
-  // Prefer provider exposed by the imported SDK when available
-  try { if (!g.ethereum && (farcasterSdk as any)?.ethereum) g.ethereum = (farcasterSdk as any).ethereum } catch {}
-} catch {}
-
-const chainId = Number(import.meta.env.VITE_CHAIN_ID || 84532)
-const chains = [baseSepolia, base] as const satisfies readonly [Chain, ...Chain[]]
-const rpcUrl = import.meta.env.VITE_RPC_URL
-
-const config = createConfig({
-  chains,
-  connectors: [
-    injected({ shimDisconnect: false })
-  ],
-  transports: {
-    [base.id]: http(rpcUrl),
-    [baseSepolia.id]: http(rpcUrl)
-  },
-  ssr: false,
-  syncConnectedChain: true
-})
+import { wagmiConfig } from './wagmiConfig'
 
 const qc = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={qc}>
         <App />
       </QueryClientProvider>
@@ -158,7 +127,6 @@ try {
     try { window.addEventListener('load', () => { callAllReadyVariants(); signal() }) } catch {}
   }
 } catch {}
-
 
 
 
