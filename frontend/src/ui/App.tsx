@@ -49,50 +49,60 @@ export default function App() {
       String((activeConnector as any).name || '').toLowerCase().includes('farcaster'))
 
   const sendWithBuilderCode = async (calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) => {
+    const callsWithSuffix = calls.map((c) => ({
+      ...c,
+      data: appendBuilderCodeSuffix((c.data || '0x') as `0x${string}`),
+    }))
     try {
       if (isFarcasterWallet) {
-        await sendCallsAsync({ calls, chainId: desiredChainId, capabilities: sendCallsCapabilities as any })
+        await sendCallsAsync({ calls: callsWithSuffix, chainId: desiredChainId })
         return
       }
-      await sendCallsAsync({ calls, chainId: desiredChainId, capabilities: sendCallsCapabilities as any })
+      await sendCallsAsync({ calls: callsWithSuffix, chainId: desiredChainId })
       return
     } catch (e) {
-      const eth = (typeof window !== 'undefined' && (window as any).ethereum)
-      if (eth?.request) {
-        try { await eth.request({ method: 'eth_requestAccounts' }) } catch {}
-        try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: desiredChainHex }] }) } catch {}
+      // Use the active connector provider first; avoid window.ethereum in mini app.
+      const provider = (activeConnector as any)?.getProvider ? await (activeConnector as any).getProvider() : null
+      if (!provider) throw new Error('No provider available from the connected wallet')
+
+      const payloadCalls = callsWithSuffix.map((c) => ({
+        to: c.to,
+        data: c.data,
+        ...(c.value !== undefined ? { value: toHex(c.value) } : {})
+      }))
+
+      try {
+        await provider.request({
+          method: 'wallet_sendCalls',
+          params: [{
+            chainId: desiredChainHex,
+            from: address,
+            calls: payloadCalls,
+          }]
+        })
+        return
+      } catch (e2: any) {
+        // Only use eth_sendTransaction fallback outside mini app or when wallet_sendCalls unsupported.
+        if (isMiniApp) throw new Error(e2?.message || String(e2))
+
         try {
-          await eth.request({
-            method: 'wallet_sendCalls',
+          const first = calls[0]
+          if (!first) throw e2
+          const txData = appendBuilderCodeSuffix((first.data || '0x') as `0x${string}`)
+          await provider.request({
+            method: 'eth_sendTransaction',
             params: [{
-              calls: calls.map((c) => ({
-                to: c.to,
-                data: c.data,
-                value: c.value !== undefined ? toHex(c.value) : undefined
-              })),
-              capabilities: sendCallsCapabilities
+              to: first.to,
+              data: txData,
+              from: address as any,
+              ...(first.value !== undefined ? { value: toHex(first.value) } : {})
             }]
           })
           return
-        } catch (e2) {
-          try {
-            const first = calls[0]
-            if (!first) throw e2
-            const txData = appendBuilderCodeSuffix((first.data || '0x') as `0x${string}`)
-            await eth.request({
-              method: 'eth_sendTransaction',
-              params: [{
-                to: first.to,
-                data: txData,
-                from: address as any,
-                value: first.value !== undefined ? toHex(first.value) : undefined
-              }]
-            })
-            return
-          } catch {}
+        } catch (e3: any) {
+          throw new Error(e3?.message || e2?.message || String(e3 || e2))
         }
       }
-      throw e
     }
   }
 
