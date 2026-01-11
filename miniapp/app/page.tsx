@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { createPublicClient, formatEther, http, parseAbi, readContract } from "viem";
 import { useAccount, useConnect, useWriteContract, useChainId, useSwitchChain } from "wagmi";
 import { CHAIN } from "../lib/wagmi";
@@ -82,6 +83,22 @@ export default function Page() {
 
   return (
     <main>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <Link
+          href="/menu"
+          style={{
+            padding: "6px 10px",
+            borderRadius: 8,
+            border: "1px solid #2c2c2e",
+            background: "#1c1c1e",
+            color: "#fff",
+            textDecoration: "none",
+            fontSize: 12,
+          }}
+        >
+          Menu
+        </Link>
+      </div>
       <h1>Number Guessing on Base</h1>
       <p>Guess a number between 1 and 1000. Closest wins.</p>
 
